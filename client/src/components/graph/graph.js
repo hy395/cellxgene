@@ -366,7 +366,9 @@ class Graph extends React.Component {
       stateChanges = { ...stateChanges, toolSVG: newToolSVG, tool, container };
     };
 
-    const createCentroidSVG = () => {
+    const createCentroidSVG = (
+      viewportChange = true /* this should be defaulted to false */
+    ) => {
       d3.select("#graphAttachPoint")
         .select("#centroid-container")
         .remove();
@@ -384,9 +386,14 @@ class Graph extends React.Component {
       let value;
       while (pair) {
         value = pair[1];
-        if (!value[2]) {
-          value.splice(0, 2, ...this.mapPointToScreen([value[0], value[1]]));
+        if (!value[2] || viewportChange) {
+          console.log("before:", value);
+
           value[2] = true;
+
+          value.splice(3, 2, ...this.mapPointToScreen([value[0], value[1]]));
+
+          console.log(value);
         }
         pair = iter.next().value;
       }
@@ -407,7 +414,7 @@ class Graph extends React.Component {
     ) {
       // If the window size has changed we want to recreate all SVGs
       createToolSVG();
-      createCentroidSVG();
+      createCentroidSVG(true);
       // stateChanges = { ...stateChanges, ...this.createToolSVG() };
     } else if (
       (responsive.height && responsive.width && !toolSVG) ||
