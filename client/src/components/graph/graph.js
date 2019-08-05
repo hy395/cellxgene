@@ -410,8 +410,7 @@ class Graph extends React.Component {
       const newCentroidSVG = setupCentroidSVG(
         responsive,
         this.graphPaddingRight,
-        centroidLabels.labels,
-        colorAccessor
+        centroidLabels.labels
       );
 
       stateChanges = { ...stateChanges, centroidSVG: newCentroidSVG };
