@@ -81,7 +81,8 @@ function renderThrottle(callback) {
   layoutChoice: state.layoutChoice,
   centroidLabels: state.centroidLabels,
   graphInteractionMode: state.controls.graphInteractionMode,
-  colorAccessor: state.colors.colorAccessor
+  colorAccessor: state.colors.colorAccessor,
+  pointDilation: state.pointDilation
 }))
 class Graph extends React.Component {
   computePointPositions = memoize((X, Y, modelTF) => {
@@ -250,7 +251,8 @@ class Graph extends React.Component {
       layoutChoice,
       graphInteractionMode,
       colorAccessor,
-      centroidLabels
+      centroidLabels,
+      pointDilation
     } = this.props;
     const { reglRender, regl, toolSVG, centroidSVG } = this.state;
     let stateChanges = {};
@@ -305,7 +307,7 @@ class Graph extends React.Component {
       }
 
       /* flags for each point */
-      const { metadataField, categoryField } = centroidLabels;
+      const { metadataField, categoryField } = pointDilation;
       const newFlags = this.computePointFlags(
         world,
         crossfilter,
