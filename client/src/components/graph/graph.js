@@ -250,7 +250,6 @@ class Graph extends React.Component {
       currentSelection,
       layoutChoice,
       graphInteractionMode,
-      colorAccessor,
       centroidLabels,
       pointDilation
     } = this.props;
