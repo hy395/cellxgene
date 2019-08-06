@@ -315,8 +315,8 @@ class Graph extends React.Component {
       );
       if (renderCache.flags !== newFlags) {
         renderCache.flags = newFlags;
-        flagBuffer({ data: newFlags, dimension: 1 });
         needsRepaint = true;
+        flagBuffer({ data: newFlags, dimension: 1 });
       }
 
       this.count = nObs;
@@ -458,6 +458,18 @@ class Graph extends React.Component {
       );
     }
 
+    const svg = stateChanges.centroidSVG || centroidSVG;
+    svg
+      ?.selectAll("text")
+      .style("font-size", "12")
+      .style("font-weight", null);
+
+    if (pointDilation.categoryField) {
+      svg
+        ?.select(`#svg${pointDilation.categoryField}-label`)
+        .style("font-size", "18px")
+        .style("font-weight", "800");
+    }
     if (Object.keys(stateChanges).length > 0) {
       this.setState(stateChanges);
     }
