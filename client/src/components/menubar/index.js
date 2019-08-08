@@ -17,6 +17,7 @@ import InformationMenu from "./infoMenu";
 import UndoRedoReset from "./undoRedoReset";
 import Clip from "./clip";
 import { tooltipHoverOpenDelay } from "../../globals";
+import centroidLabels from "../../reducers/centroidLabels";
 
 @connect(state => ({
   universe: state.universe,
@@ -39,7 +40,8 @@ import { tooltipHoverOpenDelay } from "../../globals";
   libraryVersions: state.config?.library_versions, // eslint-disable-line camelcase
   undoDisabled: state["@@undoable/past"].length === 0,
   redoDisabled: state["@@undoable/future"].length === 0,
-  aboutLink: state.config?.links?.["about-dataset"]
+  aboutLink: state.config?.links?.["about-dataset"],
+  centroidToggle: state.centroidLabels.toggle
 }))
 class MenuBar extends React.Component {
   static isValidDigitKeyEvent(e) {
@@ -255,6 +257,15 @@ class MenuBar extends React.Component {
     });
   };
 
+  handleCentroidChange = () => {
+    const { dispatch, centroidToggle } = this.props;
+
+    dispatch({
+      type: "show centroid labels for category",
+      toggle: !centroidToggle
+    });
+  };
+
   render() {
     const {
       dispatch,
@@ -269,7 +280,8 @@ class MenuBar extends React.Component {
       clipPercentileMax,
       layoutChoice,
       graphInteractionMode,
-      aboutLink
+      aboutLink,
+      centroidToggle
     } = this.props;
     const { pendingClipPercentiles } = this.state;
 
@@ -404,6 +416,22 @@ class MenuBar extends React.Component {
             />
           </Tooltip>
         </div>
+        <Tooltip
+          content="View the centroids for all values"
+          position="bottom"
+          disabled={graphInteractionMode === "zoom"}
+        >
+          <Button
+            icon="property"
+            onClick={this.handleCentroidChange}
+            active={centroidToggle}
+            intent={centroidToggle ? "primary" : "none"}
+            disabled={graphInteractionMode === "zoom"}
+            style={{
+              marginLeft: 10
+            }}
+          />
+        </Tooltip>
         <div
           className="bp3-button-group"
           style={{
