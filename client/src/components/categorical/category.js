@@ -146,14 +146,6 @@ class Category extends React.Component {
     });
   };
 
-  handleCentroidChange = () => {
-    const { dispatch, metadataField } = this.props;
-    dispatch({
-      type: "show centroid labels for category",
-      metadataField
-    });
-  };
-
   toggleAll() {
     const { dispatch, metadataField } = this.props;
     dispatch({
