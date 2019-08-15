@@ -278,6 +278,8 @@ class Graph extends React.Component {
           0 /* ||
         graphInteractionMode === "zoom" */
       ) {
+        console.log("exit no redraw");
+
         // Return without redrawing the svg layer
         return;
       }
@@ -300,11 +302,6 @@ class Graph extends React.Component {
         ) {
           // replace indicies 2 and 3 with screen calculated coordinates
           value.splice(2, 2, ...this.mapPointToScreen([value[0], value[1]]));
-
-          // this is temp just to see calculation circle
-
-          value.push(...this.mapPointToScreen([value[4], value[4]]));
-          value.push(...this.mapPointToScreen([value[4], value[5]]));
         }
         // Iterate
         pair = iter.next().value;
@@ -488,6 +485,7 @@ class Graph extends React.Component {
     } else if (prevProps.graphInteractionMode !== graphInteractionMode) {
       // If lasso/zoom is switched
       createToolSVG();
+      createCentroidSVG();
     } else if (
       centroidLabels !== prevProps.centroidLabels ||
       (responsive.height &&
