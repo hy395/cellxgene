@@ -426,7 +426,6 @@ class MenuBar extends React.Component {
             onClick={this.handleCentroidChange}
             active={centroidToggle}
             intent={centroidToggle ? "primary" : "none"}
-            disabled={graphInteractionMode === "zoom"}
             style={{
               marginLeft: 10
             }}
