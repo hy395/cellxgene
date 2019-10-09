@@ -364,14 +364,14 @@ class Graph extends React.Component {
       stateChanges = {
         ...stateChanges,
         ...this.createToolSVG(),
-        ...this.createCentroidSVG()
+        ...this.createCentroidSVG(true)
       };
     } else if (
       (responsive.height && responsive.width && !toolSVG) ||
       selectionTool !== prevProps.selectionTool
     ) {
       // first time or change of selection tool
-      stateChanges = { ...stateChanges, ...this.createToolSVG() };
+      stateChanges = { ...stateChanges, ...this.createToolSVG(true) };
     } else if (prevProps.graphInteractionMode !== graphInteractionMode) {
       // If lasso/zoom is switched
       stateChanges = {
@@ -386,7 +386,7 @@ class Graph extends React.Component {
         !(centroidSVG || stateChanges.centroidSVG))
     ) {
       // First time for centroid or label change
-      stateChanges = { ...stateChanges, ...this.createCentroidSVG() };
+      stateChanges = { ...stateChanges, ...this.createCentroidSVG(true) };
     } else if (
       centroidLabels.toggle &&
       prevState.cameraUpdate !== cameraUpdate
