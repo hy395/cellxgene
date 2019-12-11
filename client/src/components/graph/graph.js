@@ -312,7 +312,7 @@ class Graph extends React.Component {
         };
       }
 
-      if (cameraTF && centroids?.length > 1) {
+      if (cameraTF && centroids?.length > 0) {
         centroids.forEach(centroid => {
           centroid.attr(
             "transform",
@@ -385,8 +385,7 @@ class Graph extends React.Component {
       // If the window size has changed we want to recreate all SVGs
       stateChanges = {
         ...stateChanges,
-        ...this.createToolSVG(),
-        ...this.createCentroidSVG(true)
+        ...this.createToolSVG()
       };
     } else if (
       (responsive.height && responsive.width && !toolSVG) ||
@@ -398,14 +397,13 @@ class Graph extends React.Component {
       // If lasso/zoom is switched
       stateChanges = {
         ...stateChanges,
-        ...this.createToolSVG(),
-        ...this.createCentroidSVG()
+        ...this.createToolSVG()
       };
     } else if (
-      // centroidLabels !== prevProps.centroidLabels ||
-      responsive.height &&
-      responsive.width &&
-      !(centroids || stateChanges.centroids)
+      centroidLabels !== prevProps.centroidLabels ||
+      (responsive.height &&
+        responsive.width &&
+        !(centroids || stateChanges.centroids))
     ) {
       // First time for centroid or label change
       stateChanges = { ...stateChanges, ...this.createCentroidSVG(true) };
@@ -514,12 +512,11 @@ class Graph extends React.Component {
     return { toolSVG: newToolSVG, tool, container };
   };
 
-  createCentroidSVG = (viewportChange = false) => {
+  createCentroidSVG = () => {
     /*
     Called from componentDidUpdate. Create the centroid SVG, and return any
     state changes that should be passed to setState().
 
-    CURRENTLY UNUSED
     */
     const { responsive, centroidLabels, colorAccessor, dispatch } = this.props;
 
@@ -531,13 +528,7 @@ class Graph extends React.Component {
       .remove();
 
     // If there is no currently selected cateogry for viewing
-    // Or if the graph is currently in zoom/pan mode
-    if (
-      false && //TEMP
-      (!colorAccessor || centroidLabels.labels.length === 0)
-      /* ||
-    graphInteractionMode === "zoom" */
-    ) {
+    if (!colorAccessor || centroidLabels.labels.length === 0) {
       // Return without redrawing the svg layer
       return null;
     }
@@ -599,21 +590,6 @@ class Graph extends React.Component {
     // Iterate over all the key-value pairs in labels
     // key value pair looks like:
     // categoryValue -> [layoutX, layoutY, calculatedScreenX, calculatedScreenY]
-    const iter = centroidLabels.labels.entries();
-    let pair = iter.next().value;
-    // While there are pairs
-    while (pair) {
-      const value = pair[1];
-      // If the screen coordinates haven't been calculated
-      // or if the viewport has changed
-
-      if (value.length < 4 || viewportChange) {
-        // replace indicies 2 and 3 with screen calculated coordinates
-        value.splice(2, 2, ...this.mapPointToScreen([value[0], value[1]]));
-      }
-      // Iterate
-      pair = iter.next().value;
-    }
 
     const handleMouseEnter = d => {
       dispatch({
