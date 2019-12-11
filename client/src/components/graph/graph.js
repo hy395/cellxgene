@@ -260,11 +260,10 @@ class Graph extends React.Component {
       reglRender,
       regl,
       toolSVG,
-      centroidSVG,
+      centroids,
       cameraUpdate,
       camera,
-      modelTF,
-      projectionTF
+      modelTF
     } = this.state;
     let stateChanges = {};
 
@@ -290,48 +289,11 @@ class Graph extends React.Component {
       }
     }
 
-    if (cameraTF && centroidSVG?.length > 1) {
-      // smallCentroid.attr(
-      //   "transform",
-      //   `${this.reverseMatrixScaleTransformString(
-      //     modelTF
-      //   )} ${this.reverseMatrixScaleTransformString(
-      //     cameraTF
-      //   )} ${this.reverseMatrixScaleTransformString(
-      //     projectionTF
-      //   )} scale(1 ${-1 /
-      //     (responsive.height - this.graphPaddingTop)}) scale(${1 /
-      //     (responsive.width - this.graphPaddingRight / 2)} 1) scale(1 2) `
-      // );
-
-      centroidSVG.forEach(centroid => {
-        centroid.attr(
-          "transform",
-          `${this.reverseMatrixScaleTransformString(
-            modelTF
-          )} ${this.reverseMatrixScaleTransformString(
-            cameraTF
-          )} ${this.reverseMatrixScaleTransformString(
-            projectionTF
-          )} scale(1 2) scale(1 ${1 /
-            -(responsive.height - this.graphPaddingTop)})
-           scale(2 1) scale(${1 /
-             (responsive.width - this.graphPaddingRight)} 1)`
-        );
-      });
-    }
-
     if (regl && world) {
       /* update the regl and point rendering state */
       const { obsLayout, nObs } = world;
-      const {
-        drawPoints,
-        camera,
-        pointBuffer,
-        colorBuffer,
-        flagBuffer,
-        modelTF
-      } = this.state;
+      const { drawPoints, pointBuffer, colorBuffer, flagBuffer } = this.state;
+
       let { projectionTF } = this.state;
       let needsRepaint = false;
 
@@ -348,6 +310,24 @@ class Graph extends React.Component {
           ...stateChanges,
           projectionTF
         };
+      }
+
+      if (cameraTF && centroids?.length > 1) {
+        centroids.forEach(centroid => {
+          centroid.attr(
+            "transform",
+            `${this.reverseMatrixScaleTransformString(
+              modelTF
+            )} ${this.reverseMatrixScaleTransformString(
+              cameraTF
+            )} ${this.reverseMatrixScaleTransformString(
+              projectionTF
+            )} scale(1 2) scale(1 ${1 /
+              -(responsive.height - this.graphPaddingTop)})
+             scale(2 1) scale(${1 /
+               (responsive.width - this.graphPaddingRight)} 1)`
+          );
+        });
       }
 
       /* coordinates for each point */
@@ -371,7 +351,6 @@ class Graph extends React.Component {
       }
 
       /* flags for each point */
-      const { metadataField, categoryField } = pointDilation;
       const newFlags = this.computePointFlags(
         world,
         crossfilter,
@@ -426,7 +405,7 @@ class Graph extends React.Component {
       // centroidLabels !== prevProps.centroidLabels ||
       responsive.height &&
       responsive.width &&
-      !(centroidSVG || stateChanges.centroidSVG)
+      !(centroids || stateChanges.centroids)
     ) {
       // First time for centroid or label change
       stateChanges = { ...stateChanges, ...this.createCentroidSVG(true) };
@@ -453,7 +432,7 @@ class Graph extends React.Component {
       );
     }
 
-    const svg = stateChanges.centroidSVG || centroidSVG;
+    const svg = stateChanges.centroids || centroids;
 
     if (prevProps.pointDilation.categoryField !== pointDilation.categoryField) {
       if (prevProps.pointDilation.categoryField) {
@@ -481,16 +460,6 @@ class Graph extends React.Component {
     }
   }
 
-  printTF = (name, tf) => {
-    console.log("-----", name, "-----");
-    console.log("Xscale[0]:", tf[0]);
-    console.log("Yscale[4]:", tf[4]);
-    console.log("Xtranslate[6]:", tf[6]);
-    console.log("Ytranslate[7]:", tf[7]);
-    console.log("zeros:", tf[1], tf[3], tf[2], tf[5]);
-    console.log("ones:", tf[8]);
-  };
-
   handleCanvasEvent = e => {
     const { camera, projectionTF, cameraChange } = this.state;
     if (e.type !== "wheel") e.preventDefault();
@@ -515,7 +484,7 @@ class Graph extends React.Component {
       .remove();
 
     // Don't render or recreate toolSVG if currently in zoom mode
-    if (graphInteractionMode !== "select") return;
+    if (graphInteractionMode !== "select") return undefined;
 
     let handleStart;
     let handleDrag;
@@ -573,64 +542,59 @@ class Graph extends React.Component {
       return null;
     }
 
-    const lower = 0.0;
-    const higher = 1.0;
-    const fontSize = "20px";
-    const container = "#model-transformation-group";
+    // const lower = 0.0;
+    // const higher = 1.0;
 
-    const centroids = [];
+    // centroids.push(
+    //   d3
+    //     .select(container)
+    //     .append("g")
+    //     .attr("id", "small")
+    //     .attr("class", "centroid-label")
+    //     .attr("transform", `translate(${lower} ${higher})`)
+    //     .append("text")
+    //     .attr("text-anchor", "middle")
+    //     .style("font-size", fontSize)
+    //     .style("dominant-baseline", "centeral")
+    //     .text("kittens")
+    // );
+    // centroids.push(
+    //   d3
+    //     .select(container)
+    //     .append("g")
+    //     .attr("transform", `translate(${higher} ${higher})`)
+    //     .attr("class", "centroid-label")
+    //     .append("text")
+    //     .attr("text-anchor", "middle")
+    //     .style("font-size", fontSize)
+    //     .text("2")
+    // );
+    // centroids.push(
+    //   d3
+    //     .select(container)
+    //     .append("g")
+    //     .attr("transform", `translate(${lower} ${lower})`)
+    //     .attr("class", "centroid-label")
+    //     .append("text")
+    //     .attr("text-anchor", "middle")
+    //     .style("font-size", fontSize)
+    //     .text("3")
+    // );
+    // centroids.push(
+    //   d3
+    //     .select(container)
+    //     .append("g")
+    //     .attr("transform", `translate(${higher} ${lower})`)
 
-    centroids.push(
-      d3
-        .select(container)
-        .append("g")
-        .attr("id", "small")
-        .attr("class", "centroid-label")
-        .attr("transform", `translate(${lower} ${higher})`)
-        .append("text")
-        .attr("text-anchor", "middle")
-        .style("font-size", fontSize)
-        .text("kittens")
-    );
-    centroids.push(
-      d3
-        .select(container)
-        .append("g")
-        .attr("transform", `translate(${higher} ${higher})`)
-        .attr("class", "centroid-label")
-        .append("text")
-        .attr("text-anchor", "middle")
-        .style("font-size", fontSize)
-        .text("2")
-    );
-    centroids.push(
-      d3
-        .select(container)
-        .append("g")
-        .attr("transform", `translate(${lower} ${lower})`)
-        .attr("class", "centroid-label")
-        .append("text")
-        .attr("text-anchor", "middle")
-        .style("font-size", fontSize)
-        .text("3")
-    );
-    centroids.push(
-      d3
-        .select(container)
-        .append("g")
-        .attr("transform", `translate(${higher} ${lower})`)
+    //     .attr("class", "centroid-label")
+    //     .append("text")
+    //     .attr("text-anchor", "middle")
 
-        .attr("class", "centroid-label")
-        .append("text")
-        .attr("text-anchor", "middle")
+    //     .style("font-size", fontSize)
+    //     .text("4")
+    // );
 
-        .style("font-size", fontSize)
-        .text("4")
-    );
-
-    return { centroidSVG: centroids };
-
-    return;
+    // return { centroidSVG: centroids };
 
     // Iterate over all the key-value pairs in labels
     // key value pair looks like:
@@ -669,7 +633,7 @@ class Graph extends React.Component {
 
     // Disconnected while creating pan interation
 
-    const newCentroidSVG = setupCentroidSVG(
+    const centroids = setupCentroidSVG(
       responsive,
       this.graphPaddingRight,
       centroidLabels.labels,
@@ -677,7 +641,7 @@ class Graph extends React.Component {
       handleMouseExit
     );
 
-    return { centroidSVG: newCentroidSVG };
+    return { centroids };
   };
 
   matrixToTransformString = m => {
@@ -1020,13 +984,6 @@ class Graph extends React.Component {
               }
             >
               {cameraTF !== undefined && (
-                /* <g id="canvas-transformation-group">
-                  <g id="projection-transformation-group">
-                    <g id="camera-transformation-group">
-                      <g id="model-transformation-group" />
-                    </g>
-                  </g>
-                </g> */
                 <g
                   id="canvas-transformation-group-x"
                   transform={`scale(${responsive.width -
