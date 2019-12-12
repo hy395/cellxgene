@@ -8,11 +8,12 @@ import memoize from "memoize-one";
 
 import * as globals from "../../globals";
 import setupSVGandBrushElements from "./setupSVGandBrush";
-import setupCentroidSVG from "./setupCentroidSVG";
 import _camera from "../../util/camera";
 import _drawPoints from "./drawPointsRegl";
 import { isTypedArray } from "../../util/typeHelpers";
 import styles from "./graph.css";
+
+import CentroidLabels from "./overlays/centroidLabels";
 
 /*
 Simple 2D transforms control all point painting.  There are three:
@@ -188,10 +189,8 @@ class Graph extends React.Component {
     };
     this.state = {
       toolSVG: null,
-      centroidSVG: null,
       tool: null,
-      container: null,
-      cameraUpdate: 0 /* this is a horrible way to do this */
+      container: null
     };
   }
 
@@ -252,7 +251,6 @@ class Graph extends React.Component {
       currentSelection,
       layoutChoice,
       graphInteractionMode,
-      centroidLabels,
       pointDilation,
       colorAccessor
     } = this.props;
@@ -261,7 +259,6 @@ class Graph extends React.Component {
       regl,
       toolSVG,
       centroids,
-      cameraUpdate,
       camera,
       modelTF
     } = this.state;
@@ -310,24 +307,6 @@ class Graph extends React.Component {
           ...stateChanges,
           projectionTF
         };
-      }
-
-      if (cameraTF && centroids?.length > 0) {
-        centroids.forEach(centroid => {
-          centroid.attr(
-            "transform",
-            `${this.reverseMatrixScaleTransformString(
-              modelTF
-            )} ${this.reverseMatrixScaleTransformString(
-              cameraTF
-            )} ${this.reverseMatrixScaleTransformString(
-              projectionTF
-            )} scale(1 2) scale(1 ${1 /
-              -(responsive.height - this.graphPaddingTop)})
-             scale(2 1) scale(${1 /
-               (responsive.width - this.graphPaddingRight)} 1)`
-          );
-        });
       }
 
       /* coordinates for each point */
@@ -399,19 +378,6 @@ class Graph extends React.Component {
         ...stateChanges,
         ...this.createToolSVG()
       };
-    } else if (
-      centroidLabels !== prevProps.centroidLabels ||
-      (responsive.height &&
-        responsive.width &&
-        !(centroids || stateChanges.centroids))
-    ) {
-      // First time for centroid or label change
-      stateChanges = { ...stateChanges, ...this.createCentroidSVG(true) };
-    } else if (
-      centroidLabels.toggle &&
-      prevState.cameraUpdate !== cameraUpdate
-    ) {
-      stateChanges = { ...stateChanges, ...this.createCentroidSVG() };
     }
 
     /*
@@ -510,114 +476,6 @@ class Graph extends React.Component {
     );
 
     return { toolSVG: newToolSVG, tool, container };
-  };
-
-  createCentroidSVG = () => {
-    /*
-    Called from componentDidUpdate. Create the centroid SVG, and return any
-    state changes that should be passed to setState().
-
-    */
-    const { responsive, centroidLabels, colorAccessor, dispatch } = this.props;
-
-    // Remove pre-existing SVG layer
-    d3.select("#graphAttachPoint")
-      .select("svg")
-      .style("background", null)
-      .selectAll(".centroid-label")
-      .remove();
-
-    // If there is no currently selected cateogry for viewing
-    if (!colorAccessor || centroidLabels.labels.length === 0) {
-      // Return without redrawing the svg layer
-      return null;
-    }
-
-    // const lower = 0.0;
-    // const higher = 1.0;
-
-    // centroids.push(
-    //   d3
-    //     .select(container)
-    //     .append("g")
-    //     .attr("id", "small")
-    //     .attr("class", "centroid-label")
-    //     .attr("transform", `translate(${lower} ${higher})`)
-    //     .append("text")
-    //     .attr("text-anchor", "middle")
-    //     .style("font-size", fontSize)
-    //     .style("dominant-baseline", "centeral")
-    //     .text("kittens")
-    // );
-    // centroids.push(
-    //   d3
-    //     .select(container)
-    //     .append("g")
-    //     .attr("transform", `translate(${higher} ${higher})`)
-    //     .attr("class", "centroid-label")
-    //     .append("text")
-    //     .attr("text-anchor", "middle")
-    //     .style("font-size", fontSize)
-    //     .text("2")
-    // );
-    // centroids.push(
-    //   d3
-    //     .select(container)
-    //     .append("g")
-    //     .attr("transform", `translate(${lower} ${lower})`)
-    //     .attr("class", "centroid-label")
-    //     .append("text")
-    //     .attr("text-anchor", "middle")
-    //     .style("font-size", fontSize)
-    //     .text("3")
-    // );
-    // centroids.push(
-    //   d3
-    //     .select(container)
-    //     .append("g")
-    //     .attr("transform", `translate(${higher} ${lower})`)
-
-    //     .attr("class", "centroid-label")
-    //     .append("text")
-    //     .attr("text-anchor", "middle")
-
-    //     .style("font-size", fontSize)
-    //     .text("4")
-    // );
-
-    // return { centroidSVG: centroids };
-
-    // Iterate over all the key-value pairs in labels
-    // key value pair looks like:
-    // categoryValue -> [layoutX, layoutY, calculatedScreenX, calculatedScreenY]
-
-    const handleMouseEnter = d => {
-      dispatch({
-        type: "category value mouse hover start",
-        metadataField: colorAccessor,
-        categoryField: d.key
-      });
-    };
-
-    const handleMouseExit = d => {
-      dispatch({
-        type: "category value mouse hover end",
-        metadataField: colorAccessor,
-        categoryField: d.key
-      });
-    };
-
-    // Disconnected while creating pan interation
-
-    const centroids = setupCentroidSVG(
-      responsive,
-      this.graphPaddingRight,
-      centroidLabels.labels,
-      handleMouseEnter,
-      handleMouseExit
-    );
-
-    return { centroids };
   };
 
   matrixToTransformString = m => {
@@ -932,10 +790,34 @@ class Graph extends React.Component {
   });
 
   render() {
-    const { responsive, graphInteractionMode } = this.props;
+    const {
+      responsive,
+      graphInteractionMode,
+      centroidLabels,
+      colorAccessor,
+      dispatch
+    } = this.props;
     const { modelTF, projectionTF, camera } = this.state;
 
     const cameraTF = camera?.view();
+
+    const handleMouseEnter = e => {
+      dispatch({
+        type: "category value mouse hover start",
+        metadataField: colorAccessor,
+        categoryField: d.key
+      });
+    };
+
+    const handleMouseExit = e => {
+      console.log(e);
+
+      dispatch({
+        type: "category value mouse hover end",
+        metadataField: colorAccessor,
+        categoryField: d.key
+      });
+    };
 
     return (
       <div id="graphWrapper">
@@ -949,7 +831,6 @@ class Graph extends React.Component {
         >
           <div id="graphAttachPoint">
             <svg
-              id="thisisatempiddeletethislaterplease"
               data-testid="layout-overlay"
               className={styles.graphSVG}
               width={responsive.width - this.graphPaddingRight}
@@ -982,7 +863,24 @@ class Graph extends React.Component {
                         <g
                           id="model-transformation-group"
                           transform={this.matrixToTransformString(modelTF)}
-                        />
+                        >
+                          <CentroidLabels
+                            labels={centroidLabels.labels}
+                            mouseEnter={handleMouseEnter}
+                            mouseExit={handleMouseExit}
+                            inverseScale={`${this.reverseMatrixScaleTransformString(
+                              modelTF
+                            )} ${this.reverseMatrixScaleTransformString(
+                              cameraTF
+                            )} ${this.reverseMatrixScaleTransformString(
+                              projectionTF
+                            )} scale(1 2) scale(1 ${1 /
+                              -(
+                                responsive.height - this.graphPaddingTop
+                              )}) scale(2 1) scale(${1 /
+                              (responsive.width - this.graphPaddingRight)} 1)`}
+                          />
+                        </g>
                       </g>
                     </g>
                   </g>
